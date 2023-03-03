@@ -1,32 +1,32 @@
-const { findOne } = require("../models/User");
-const User = require("../models/User");
 const bcrypt = require("bcrypt");
+const { findOne } = require("../models/User");
 const jwt = require("jsonwebtoken");
+const Admin = require("../models/Admin");
 
 exports.register = async (req, res) => {
   try {
-    const { name, email, password, phone } = req.body;
-    const foundAdmin = await User.findOne({ email });
-    if (foundUser) {
+    const { name, email, password } = req.body;
+    const foundAdmin = await Admin.findOne({ email });
+    if (foundAdmin) {
       return res
         .status(400)
         .send({ errors: [{ msg: "Email should be unique try again! " }] });
     }
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(password, saltRounds);
-    const newUser = new User({ ...req.body });
-    newUser.password = hashedPassword;
-    await newUser.save();
+    const newAdmin = new Admin({ ...req.body });
+    newAdmin.password = hashedPassword;
+    await newAdmin.save();
     const token = jwt.sign(
       {
-        id: newUser._id,
+        id: newAdmin._id,
       },
-      process.env.SECRET_KEY,
+      process.env.SECRET_KEY_ADMIN,
       { expiresIn: "1h" }
     );
     res
       .status(200)
-      .send({ msg: "Register successfully..", user: newUser, token });
+      .send({ msg: "Register successfully..", admin: newAdmin, token });
   } catch (error) {
     res.status(400).send({ errors: [{ msg: "Can not register !!" }] });
   }
@@ -35,24 +35,24 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const foundUser = await User.findOne({ email });
-    if (!foundUser) {
+    const foundAdmin = await Admin.findOne({ email });
+    if (!foundAdmin) {
       return res.status(400).send({ errors: [{ msg: "Bad credential ! " }] });
     }
-    const checkPassword = await bcrypt.compare(password, foundUser.password);
+    const checkPassword = await bcrypt.compare(password, foundAdmin.password);
     if (!checkPassword) {
       return res.status(400).send({ errors: [{ msg: "Bad credential ! " }] });
     }
     const token = jwt.sign(
       {
-        id: foundUser._id,
+        id: foundAdmin._id,
       },
       process.env.SECRET_KEY,
       { expiresIn: "1h" }
     );
     res
       .status(200)
-      .send({ msg: "Login successfully..", user: foundUser, token });
+      .send({ msg: "Login successfully..", admin: foundAdmin, token });
   } catch (error) {
     res.status(400).send({ errors: [{ msg: "Can not login !!" }] });
   }
